@@ -52,14 +52,63 @@ void ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt))
+    switch (which)
     {
-        DEBUG('a', "Shutdown, initiated by user program\n");
-        interrupt->Halt();
-    }
-    else
-    {
-        printf("Unexpected user mode exception %d %d\n", which, type);
-        ASSERT(FALSE);
+        // Handle exceptions in machine.h
+        case NoException:
+            return;
+
+        case PageFaultException:
+            DEBUG('a', "\nPageFaultException: No valid translation found!");
+            printf("\n\nPageFaultException: No valid translation found!");
+            interrupt->Halt();
+            break;
+
+        case ReadOnlyException:
+            DEBUG('a', "\nReadOnlyException: Write attempted to page marked read-only!");
+            printf("\n\nReadOnlyException: Write attempted to page marked read-only!");
+            interrupt->Halt();
+            break;
+
+        case BusErrorException:
+            DEBUG('a', "\nBusErrorException: Translation resulted in an invalid physical address!");
+            printf("\n\nBusErrorException: Translation resulted in an invalid physical address!");
+            interrupt->Halt();
+            break;
+
+        case AddressErrorException:            
+            DEBUG('a', "\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
+            printf("\n\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
+            interrupt->Halt();
+            break;
+
+        case OverflowException:
+            DEBUG('a', "\nOverflowException: Integer overflow in add or sub!");
+            printf("\n\nOverflowException: Integer overflow in add or sub!");
+            interrupt->Halt();
+            break;
+
+        case IllegalInstrException:
+            DEBUG('a', "\nIllegalInstrException: Unimplemented or reserved instr!");
+            printf("\n\nIllegalInstrException: Unimplemented or reserved instr!");
+            interrupt->Halt();
+            break;
+        
+        case NumExceptionTypes:
+            DEBUG('a', "\nNumExceptionTypes: Num exeption types occurred!");
+            printf("\n\nNum exeption types occurred!");
+            interrupt->Halt();
+            break;
+
+        // Handle system call exceptions
+        case SyscallException:
+            switch (type)
+            {
+                case SC_Halt:
+                    DEBUG('a', "Shutdown, initiated by user program\n");
+                    interrupt->Halt();
+                    break;
+            }
+            break;
     }
 }
