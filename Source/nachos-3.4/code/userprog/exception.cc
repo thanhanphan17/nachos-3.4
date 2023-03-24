@@ -22,7 +22,9 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
+
 #include "system.h"
+
 #include "syscall.h"
 
 //----------------------------------------------------------------------
@@ -48,101 +50,94 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-void IncreaseProgramCounter()
-{
-    machine->WriteRegister(PrevPCReg,
-                           machine->ReadRegister(PCReg));
+void IncreaseProgramCounter() {
+    machine -> WriteRegister(PrevPCReg,
+        machine -> ReadRegister(PCReg));
 
-    machine->WriteRegister(PCReg,
-                           machine->ReadRegister(NextPCReg));
+    machine -> WriteRegister(PCReg,
+        machine -> ReadRegister(NextPCReg));
 
-    machine->WriteRegister(NextPCReg,
-                           machine->ReadRegister(NextPCReg) + 4);
+    machine -> WriteRegister(NextPCReg,
+        machine -> ReadRegister(NextPCReg) + 4);
 }
 
-char *User2System(int virtAddr, int limit)
-{
+char * User2System(int virtAddr, int limit) {
     int i; // index
     int oneChar;
-    char *kernelBuf = NULL;
+    char * kernelBuf = NULL;
 
     kernelBuf = new char[limit + 1]; // need for terminal string
+
     if (kernelBuf == NULL)
         return kernelBuf;
+
     memset(kernelBuf, 0, limit + 1);
 
     // printf("\n Filename u2s:");
-    for (i = 0; i < limit; i++)
-    {
-        machine->ReadMem(virtAddr + i, 1, &oneChar);
-        kernelBuf[i] = (char)oneChar;
+    for (i = 0; i < limit; i++) {
+        machine -> ReadMem(virtAddr + i, 1, & oneChar);
+        kernelBuf[i] = (char) oneChar;
         // printf("%c",kernelBuf[i]);
         if (oneChar == 0)
             break;
     }
+
     return kernelBuf;
 }
 
-int System2User(int virtAddr, int len, char *buffer)
-{
+int System2User(int virtAddr, int len, char * buffer) {
     if (len < 0)
         return -1;
+
     if (len == 0)
         return len;
+
     int i = 0;
     int oneChar = 0;
-    do
-    {
-        oneChar = (int)buffer[i];
-        machine->WriteMem(virtAddr + i, 1, oneChar);
+    do {
+        oneChar = (int) buffer[i];
+        machine -> WriteMem(virtAddr + i, 1, oneChar);
         i++;
     } while (i < len && oneChar != 0);
+
     return i;
 }
 
-void HaltHandler()
-{
+void HaltHandler() {
     DEBUG('a', "Shutdown, initiated by user program!");
     printf("\n\nShutdown, initiated by user program!");
-    interrupt->Halt();
+    interrupt -> Halt();
 }
 
-void ReadIntHandler()
-{
+void ReadIntHandler() {
     DEBUG('a', "Read integer number from console.\n");
 
     // Use a fixed-size buffer on the stack
     char buffer[INT_LEN];
 
-    int length = gSynchConsole->Read(buffer, INT_LEN);
+    int length = gSynchConsole -> Read(buffer, INT_LEN);
     int result = 0, index = 0;
 
     bool valid = true;
 
-    if (buffer[index] == '-')
-    {
+    if (buffer[index] == '-') {
         // If the first character is '-', increment the index and set the sign
         index++;
 
         // input only contains '-'
-        if (length == 1)
-        {
-            machine->WriteRegister(2, 0);
+        if (length == 1) {
+            machine -> WriteRegister(2, 0);
             printf("\nYour input is not an integer number!\n");
             valid = false;
         }
     }
 
-    while (index < length)
-    {
-        if (buffer[index] >= '0' && buffer[index] <= '9')
-        {
+    while (index < length) {
+        if (buffer[index] >= '0' && buffer[index] <= '9') {
             // If the character is a digit, add it to the result
             result = result * 10 + (buffer[index] - '0');
-        }
-        else
-        {
-            machine->WriteRegister(2, 0);
+        } else {
+            machine -> WriteRegister(2, 0);
             printf("\nYour input is not an integer number!\n");
             valid = false;
 
@@ -153,23 +148,20 @@ void ReadIntHandler()
     }
 
     // Multiply the result by -1 if the sign is negative
-    if (buffer[0] == '-')
-    {
+    if (buffer[0] == '-') {
         result *= -1;
     }
 
-    if (valid)
-    {
-        machine->WriteRegister(2, result);
+    if (valid) {
+        machine -> WriteRegister(2, result);
     }
 }
 
-void PrintIntHandler()
-{
-    int n = machine->ReadRegister(4);
+void PrintIntHandler() {
+    int n = machine -> ReadRegister(4);
     bool negative = false;
-    if (n < 0)
-    {
+
+    if (n < 0) {
         negative = true;
         n = -n;
     }
@@ -177,78 +169,67 @@ void PrintIntHandler()
     char s[INT_LEN];
     int i = 0;
 
-    do
-    {
+    do {
         s[i++] = n % 10 + '0';
     } while (n /= 10);
 
-    if (negative)
-    {
+    if (negative) {
         s[i++] = '-';
     }
 
-    for (int j = i - 1; j >= 0; j--)
-    {
-        gSynchConsole->Write(&s[j], 1);
+    for (int j = i - 1; j >= 0; j--) {
+        gSynchConsole -> Write( & s[j], 1);
     }
 }
 
-void ReadCharHandler()
-{
+void ReadCharHandler() {
     char buffer[1];
-    int length = gSynchConsole->Read(buffer, 1);
+    int length = gSynchConsole -> Read(buffer, 1);
 
-    if (length != 1)
-    {
+    if (length != 1) {
         printf("\nError occurred!\n");
         return;
     }
 
-    machine->WriteRegister(2, buffer[0]);
+    machine -> WriteRegister(2, buffer[0]);
 }
 
-void PrintCharHandler() 
-{
-    char c = (char)machine->ReadRegister(4);
-    gSynchConsole->Write(&c, 1);
+void PrintCharHandler() {
+    char c = (char) machine -> ReadRegister(4);
+    gSynchConsole -> Write( & c, 1);
 }
 
-void ReadStringHandler() 
-{
-    int virtualAddress = machine->ReadRegister(4);
-    int length = machine->ReadRegister(5);
-    char* buffer = new char[length + 1];
+void ReadStringHandler() {
+    int virtualAddress = machine -> ReadRegister(4);
+    int length = machine -> ReadRegister(5);
+    char * buffer = new char[length + 1];
 
-    gSynchConsole->Read(buffer, length);
+    gSynchConsole -> Read(buffer, length);
     System2User(virtualAddress, length, buffer);
 
     delete[] buffer;
 }
 
-void PrintStringHandler() 
-{
-    int virtualAddress = machine->ReadRegister(4);
-    char* buffer = User2System(virtualAddress, 255);
+void PrintStringHandler() {
+    int virtualAddress = machine -> ReadRegister(4);
+    char * buffer = User2System(virtualAddress, 255);
     int length = 0;
-    while (buffer[length] != '\0')
-    {
+    while (buffer[length] != '\0') {
         ++length;
     }
 
-    gSynchConsole->Write(buffer, length + 1);
+    gSynchConsole -> Write(buffer, length + 1);
 }
 
-void ExceptionHandler(ExceptionType which)
-{
-    int type = machine->ReadRegister(2);
 
-    switch (which)
-    {
-        // Handle system call exceptions
-        case SyscallException:
-        {
-            switch (type)
-            {
+// Exception handler
+void ExceptionHandler(ExceptionType which) {
+    int type = machine -> ReadRegister(2);
+
+    switch (which) {
+            // Handle system call exceptions
+        case SyscallException: {
+            switch (type) {
                 case SC_Halt:
                     HaltHandler();
                     break;
@@ -267,7 +248,7 @@ void ExceptionHandler(ExceptionType which)
 
                 case SC_PrintChar:
                     PrintCharHandler();
-					break;
+                    break;
 
                 case SC_ReadString:
                     ReadStringHandler();
@@ -289,43 +270,43 @@ void ExceptionHandler(ExceptionType which)
         case PageFaultException:
             DEBUG('a', "\nPageFaultException: No valid translation found!");
             printf("\n\nPageFaultException: No valid translation found!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case ReadOnlyException:
             DEBUG('a', "\nReadOnlyException: Write attempted to page marked read-only!");
             printf("\n\nReadOnlyException: Write attempted to page marked read-only!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case BusErrorException:
             DEBUG('a', "\nBusErrorException: Translation resulted in an invalid physical address!");
             printf("\n\nBusErrorException: Translation resulted in an invalid physical address!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case AddressErrorException:
             DEBUG('a', "\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
             printf("\n\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case OverflowException:
             DEBUG('a', "\nOverflowException: Integer overflow in add or sub!");
             printf("\n\nOverflowException: Integer overflow in add or sub!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case IllegalInstrException:
             DEBUG('a', "\nIllegalInstrException: Unimplemented or reserved instr!");
             printf("\n\nIllegalInstrException: Unimplemented or reserved instr!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
 
         case NumExceptionTypes:
             DEBUG('a', "\nNumExceptionTypes: Num exeption types occurred!");
             printf("\n\nNum exeption types occurred!");
-            interrupt->Halt();
+            interrupt -> Halt();
             break;
     }
 }
