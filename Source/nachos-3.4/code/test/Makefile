@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort
+all: halt shell matmult sort rwint rwchar rwstring
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -65,3 +65,24 @@ matmult.o: matmult.c
 matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	../bin/coff2noff matmult.coff matmult
+
+# Add rwint to compile 
+rwint.o: rwint.c
+	$(CC) $(CFLAGS) -c rwint.c
+rwint: rwint.o start.o
+	$(LD) $(LDFLAGS) start.o rwint.o -o rwint.coff
+	../bin/coff2noff rwint.coff rwint
+
+# Add rwchar to compile 
+rwchar.o: rwchar.c
+	$(CC) $(CFLAGS) -c rwchar.c
+rwchar: rwchar.o start.o
+	$(LD) $(LDFLAGS) start.o rwchar.o -o rwchar.coff
+	../bin/coff2noff rwchar.coff rwchar
+
+# Add rwstring to compile 
+rwstring.o: rwstring.c
+	$(CC) $(CFLAGS) -c rwstring.c
+rwstring: rwstring.o start.o
+	$(LD) $(LDFLAGS) start.o rwstring.o -o rwstring.coff
+	../bin/coff2noff rwstring.coff rwstring
