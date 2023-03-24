@@ -1,33 +1,53 @@
 ﻿# NACHOS (Not Another Completely Heuristic Operating System)
-A project from the Operating system's course (CSC10007) at HCMUS
+- A project from the Operating system's course (CSC10007) at HCMUS
 
 ## How to run?
-Clone the Git Repository:
-`git clone https://github.com/thanhanphan17/nachos-3.4.git`
+- Clone the Git Repository:
+```
+git clone https://github.com/thanhanphan17/nachos-3.4.git
+```
 
-Change directory to code folder:
-`cd Source/nachos-3.4/code`
+- Change directory to code folder:
+```
+cd Source/nachos-3.4/code
+```
 
-Run make:
-`make`
+- Run make:
+```
+make
+```
 
-Test ReadInt() and PrintInt():
-`./userprog/nachos -rs 1023 -x ./test/rwint`
+- Test ReadInt() and PrintInt():
+```
+./userprog/nachos -rs 1023 -x ./test/rwint
+```
 
-Test ReadChar() and PrintChar():
-`./userprog/nachos -rs 1023 -x ./test/rwchar`
+- Test ReadChar() and PrintChar():
+```
+./userprog/nachos -rs 1023 -x ./test/rwchar
+```
 
-Test ReadString() and PrintString():
-`./userprog/nachos -rs 1023 -x ./test/rwstring`
+- Test ReadString() and PrintString():
+```
+./userprog/nachos -rs 1023 -x ./test/rwstring
+```
 
-Run bubble sort program:
-`./userprog/nachos -rs 1023 -x ./test/bbsort`
+- Run bubble sort program:
+```
+./userprog/nachos -rs 1023 -x ./test/bbsort
+```
 
-Run ascii program:
-`./userprog/nachos -rs 1023 -x ./test/ascii`
+- Run ascii program:
+```
+./userprog/nachos -rs 1023 -x ./test/ascii
+```
 
-Run help program:
-`./userprog/nachos -rs 1023 -x ./test/help`
+- Run help program:
+```
+./userprog/nachos -rs 1023 -x ./test/help
+```
+
+Help program show:
 
 	+---------------------------------------------------------------+
 	|                      OUT TEAM - EARLY BIRD                    |
