@@ -5,8 +5,11 @@
 
 
 int main() {
-    int a, b;
+    int a;
+    
+    PrintString("Enter an interger number: ");
     a = ReadInt();
+
+    PrintString("Your number is: ");
     PrintInt(a);
-    Halt();
 }

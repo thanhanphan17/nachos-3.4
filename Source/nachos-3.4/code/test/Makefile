@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort rwint rwchar rwstring
+all: halt shell matmult sort rwint rwchar rwstring help
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -86,3 +86,10 @@ rwstring.o: rwstring.c
 rwstring: rwstring.o start.o
 	$(LD) $(LDFLAGS) start.o rwstring.o -o rwstring.coff
 	../bin/coff2noff rwstring.coff rwstring
+
+# Add help to compile 
+help.o: help.c
+	$(CC) $(CFLAGS) -c help.c
+help: help.o start.o
+	$(LD) $(LDFLAGS) start.o help.o -o help.coff
+	../bin/coff2noff help.coff help

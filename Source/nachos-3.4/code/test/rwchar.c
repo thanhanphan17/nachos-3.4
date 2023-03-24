@@ -3,7 +3,13 @@
 #include "syscall.h"
 
 int main() {
-    int a, b;
+    char c;
+    
+    PrintString("Enter a character: ");
+    c = ReadChar();
+
+    PrintString("Your character is: ");
+    PrintChar(c);
     
     Halt();
 }
