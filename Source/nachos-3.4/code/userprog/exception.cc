@@ -25,6 +25,10 @@
 #include "system.h"
 #include "syscall.h"
 
+const int INT_LEN = 11;
+
+
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -117,10 +121,90 @@ void ExceptionHandler(ExceptionType which)
             switch (type)
             {
                 case SC_Halt:
-                    DEBUG('a', "Shutdown, initiated by user program\n");
+                    DEBUG('a', "Shutdown, initiated by user program!");
+                    printf("\n\nShutdown, initiated by user program!");
                     interrupt->Halt();
                     break;
+                
+                case SC_Read:
+                    break;
+                
+                case SC_PrintInt:
+				{
+					int n = machine->ReadRegister(4);
+                    bool negative = false;
+                    if (n < 0) {
+                        negative = true;
+                        n = -n;
+                    }
+
+                    char s[INT_LEN];
+                    int i = 0;
+
+                    do {
+                        s[i++] = n % 10 + '0';
+                    } while (n /= 10);
+
+                    if (negative) {
+                        s[i++] = '-';
+                    }
+
+                    for (int j = i - 1; j >= 0; j--) {
+                        gSynchConsole->Write(&s[j], 1);
+                    }
+				}
+                break;
+
+                case SC_ReadInt:
+                {   
+                    DEBUG('a', "Read integer number from console.\n");
+
+                    // Use a fixed-size buffer on the stack
+                    char buffer[INT_LEN];
+
+                    int length = gSynchConsole->Read(buffer, INT_LEN);
+                    int result = 0, index = 0;
+
+                    bool valid = true;;
+
+                    if (buffer[index] == '-') {
+                        // If the first character is '-', increment the index and set the sign
+                        index++;
+
+                        // input only contains '-'
+                        if (length == 1) {
+                            machine->WriteRegister(2, 0);
+                            printf("\nYour input is not an integer number!\n");
+                            valid = false;
+                        }
+                    }
+
+                    while (index < length) {
+                        if (buffer[index] >= '0' && buffer[index] <= '9') {
+                            // If the character is a digit, add it to the result
+                            result = result * 10 + (buffer[index] - '0');
+                        } else {
+                            machine->WriteRegister(2, 0);
+                            printf("\nYour input is not an integer number!\n");
+                            valid = false;
+
+                            break;
+                        }
+
+                        index++;
+                    }
+
+                    // Multiply the result by -1 if the sign is negative
+                    if (buffer[0] == '-') {
+                        result *= -1;
+                    }
+                    if (valid) {
+                        machine->WriteRegister(2, result);
+                    }
+                }
+                break;
             }
+            IncreaseProgramCounter();
             break;
     }
 }
