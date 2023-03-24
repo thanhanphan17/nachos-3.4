@@ -19,5 +19,7 @@ int main() {
     PrintString("\t+--------------------+------------+\n");
     PrintString("\t| Huynh Duc Thien    | 21127693   |\n");
     PrintString("\t+--------------------+------------+\n");
+
+    
     Halt();
 }
