@@ -38,6 +38,8 @@
 #define SC_ReadString 15
 #define SC_PrintString 16
 
+#define INT_LEN 11
+
 #ifndef IN_ASM
 
 /* The system call interface.  These are the operations the Nachos

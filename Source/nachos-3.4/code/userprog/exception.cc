@@ -25,9 +25,6 @@
 #include "system.h"
 #include "syscall.h"
 
-const int INT_LEN = 11;
-
-
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -118,6 +115,7 @@ void ExceptionHandler(ExceptionType which)
 
         // Handle system call exceptions
         case SyscallException:
+        {
             switch (type)
             {
                 case SC_Halt:
@@ -204,7 +202,9 @@ void ExceptionHandler(ExceptionType which)
                 }
                 break;
             }
+
             IncreaseProgramCounter();
             break;
+        }
     }
 }
