@@ -115,7 +115,7 @@ void ReadIntHandler() {
     // Use a fixed-size buffer on the stack
     char buffer[INT_LEN]; 
 
-    int length = gSynchConsole -> Read(buffer, INT_LEN);
+    int length = synchConsole -> Read(buffer, INT_LEN);
     int result = 0, index = 0;
 
     bool valid = true; // check if input is a valid number
@@ -178,13 +178,13 @@ void PrintIntHandler() {
     }
 
     for (int j = i - 1; j >= 0; j--) {
-        gSynchConsole -> Write(&s[j], 1);
+        synchConsole -> Write(&s[j], 1);
     }
 }
 
 void ReadCharHandler() {
     char buffer[1];
-    int length = gSynchConsole -> Read(buffer, 1);
+    int length = synchConsole -> Read(buffer, 1);
 
     if (length != 1) {
         printf("\nError occurred!\n");
@@ -196,7 +196,7 @@ void ReadCharHandler() {
 
 void PrintCharHandler() {
     char c = (char) machine -> ReadRegister(4);
-    gSynchConsole -> Write( & c, 1);
+    synchConsole -> Write( & c, 1);
 }
 
 void ReadStringHandler() {
@@ -204,7 +204,7 @@ void ReadStringHandler() {
     int length = machine -> ReadRegister(5);
     char * buffer = new char[length + 1];
 
-    gSynchConsole -> Read(buffer, length);
+    synchConsole -> Read(buffer, length);
     System2User(virtualAddress, length, buffer);
 
     delete[] buffer;
@@ -218,7 +218,7 @@ void PrintStringHandler() {
         ++length;
     }
 
-    gSynchConsole -> Write(buffer, length + 1);
+    synchConsole -> Write(buffer, length + 1);
 }
 
 
