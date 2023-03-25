@@ -113,12 +113,12 @@ void ReadIntHandler() {
     DEBUG('a', "Read integer number from console.\n");
 
     // Use a fixed-size buffer on the stack
-    char buffer[INT_LEN];
+    char buffer[INT_LEN]; 
 
     int length = gSynchConsole -> Read(buffer, INT_LEN);
     int result = 0, index = 0;
 
-    bool valid = true;
+    bool valid = true; // check if input is a valid number
 
     if (buffer[index] == '-') {
         // If the first character is '-', increment the index and set the sign
@@ -178,7 +178,7 @@ void PrintIntHandler() {
     }
 
     for (int j = i - 1; j >= 0; j--) {
-        gSynchConsole -> Write( & s[j], 1);
+        gSynchConsole -> Write(&s[j], 1);
     }
 }
 

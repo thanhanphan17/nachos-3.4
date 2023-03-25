@@ -28,7 +28,7 @@ int main() {
     PrintString("\n\n");
 
     PrintString("\t\t\t+---------------------------------+\n");
-    PrintString("\t\t\t|           INSTRUCTION           +\n");
+    PrintString("\t\t\t|           INSTRUCTION           |\n");
     PrintString("\t\t\t+---------------------------------+\n\n");
     
     PrintString("\t+-------------+-------------------------------------------------+\n");
