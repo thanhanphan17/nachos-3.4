@@ -40,6 +40,8 @@
 #define SC_CreateFile 17
 #define SC_OpenFile 18
 #define SC_CloseFile 19
+#define SC_ReadFile 20
+#define SC_WriteFile 21
 
 #define INT_LEN 11
 #define FILE_NAME_LEN 255

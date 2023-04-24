@@ -302,6 +302,14 @@ void CloseFileHandler() {
     printf("\nClose file succesful!\n");
 }
 
+void ReadFileHandler() {
+
+}
+
+void WriteFileHandler() {
+    
+}
+
 // Exception handler
 void ExceptionHandler(ExceptionType which) {
     int type = machine -> ReadRegister(2);
@@ -349,6 +357,15 @@ void ExceptionHandler(ExceptionType which) {
                 case SC_CloseFile:
                     CloseFileHandler();
                     break;
+
+                case SC_ReadFile:
+                    ReadFileHandler();
+                    break;
+
+                case SC_WriteFile:
+                    WriteFileHandler();
+                    break;
+
             }
 
             IncreaseProgramCounter();
