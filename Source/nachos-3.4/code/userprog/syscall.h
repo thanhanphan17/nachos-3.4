@@ -37,8 +37,12 @@
 #define SC_PrintChar 14
 #define SC_ReadString 15
 #define SC_PrintString 16
+#define SC_CreateFile 17
+#define SC_OpenFile 18
+#define SC_CloseFile 19
 
 #define INT_LEN 11
+#define FILE_NAME_LEN 255
 
 #ifndef IN_ASM
 
@@ -67,6 +71,12 @@ void PrintChar(char ch); // Print character number to console
 void ReadString(char buffer[], int length); // Read string from console
 
 void PrintString(char buffer[]); // Print string to console
+
+int CreateFile(char *name); // Create new file
+
+OpenFileId Open(char* name, int type); // Open an existing file and return file's id
+
+int Close(OpenFileId); // Close file with given id
 
 /* Address space control operations: Exit, Exec, and Join */
 

@@ -38,12 +38,43 @@
 #include "copyright.h"
 #include "openfile.h"
 
+#define FILE_OPEN_MAX 10
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
 class FileSystem {
   public:
-    FileSystem(bool format) {}
+	OpenFile **openFile;	// Table store 10 OpenFile
+	int idFile;		// ID for each OpenFile
+	
+    FileSystem(bool format) {
+		this -> openFile = new OpenFile*[FILE_OPEN_MAX];
+		this -> idFile = 0;
+
+		for (int i = 0; i < FILE_OPEN_MAX; ++i) {
+			this -> openFile[i] = NULL;
+		}
+
+		this -> Create("inConsole", 0);
+		this -> Create("outConsole", 0);
+
+		OpenFile *cIn = this -> Open("inConsole", 0);	// id = 0
+		OpenFile *cOut = this -> Open("outConsole", 0);	// id = 1
+		this -> openFile[0] = cIn;
+		this -> openFile[1] = cOut;
+
+		this -> idFile = 1;
+
+		delete cIn;
+		delete cOut;
+	}
+
+	~FileSystem() {
+		for (int i = 0; i < FILE_OPEN_MAX; ++i) {
+			if (this -> openFile[i] != NULL) delete this -> openFile[i];
+		}
+	}
 
     bool Create(char *name, int initialSize) { 
 	int fileDescriptor = OpenForWrite(name);
@@ -57,6 +88,7 @@ class FileSystem {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
+	  this -> idFile++;
 	  return new OpenFile(fileDescriptor);
       }
 

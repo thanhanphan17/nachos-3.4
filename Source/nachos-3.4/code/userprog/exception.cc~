@@ -67,6 +67,7 @@ char * User2System(int virtAddr, int limit) {
     char * kernelBuf = NULL;
 
     kernelBuf = new char[limit + 1]; // need for terminal string
+    //duc thien dep zai vai lon
 
     if (kernelBuf == NULL)
         return kernelBuf;
@@ -221,86 +222,6 @@ void PrintStringHandler() {
     synchConsole -> Write(buffer, length + 1);
 }
 
-void CreateFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    char* fileName = User2System(virtualAddress, FILE_NAME_LEN + 1);
-
-    if (strlen(fileName) == 0) {
-        printf("\nInvalid file name!\n")
-        machine -> WriteRegister(2, -1);
-    } 
-    
-    else if (fileName == NULL) {
-        printf("\nSystem's memory ran out!\n")
-        machine -> WriteRegister(2, -1);
-    } 
-    
-    else if (fileSystem -> Create(fileName, 0) == false) {
-        printf("\nCreating file '%s' error!\n", fileName);
-        machine -> WriteRegister(2, -1);
-    } 
-    
-    else {
-        print("\nCreating file '%s' success!\n", fileName);
-        machine -> WriteRegister(2, 0);
-    }
-
-    
-    delete[] fileName;
-}
-
-void OpenFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    int type = machine -> ReadRegister(5);
-    char *fileName;
-
-    if (fileSystem -> idFile > 10) {
-        machine -> WriteRegister(2, -1);
-        delete[] fileName;
-        return;
-    }
-
-    fileName = User2System(virtualAddress, FILE_NAME_LEN + 1);
-
-    if (strcmp(fileName, "inConsole")) {
-        printf("\nConsole Input!\n")
-        machine -> WriteRegister(2, 0);
-    }
-
-    if (strcmp(fileName, "outConsole")) {
-        printf("\nConsole Output!\n")
-        machine -> WriteRegister(2, 1);
-
-    }
-
-    if ((fileSystem -> openFile[fileSystem -> idFile] = fileSystem -> Open(fileName)) != NULL) {
-        printf("\n'%s' has opened!\n", fileName);
-        machine -> WriteRegister(2, fileSystem -> idFile);
-    } else {
-        printf("\nCan not open '%s'\n", fileName);
-        machine -> WriteRegister(2, -1);
-    }
-
-    delete[] fileName;
-}
-
-void CloseFileHandler() {
-    int fId = machine -> ReadRegister(4);
-    
-    if (fId > fileSystem -> idFile) {
-        printf("\nInvalid file ID! Closing file failed!\n");
-        machine -> WriteRegister(2, -1);
-    }
-
-    if (fileSystem -> openFile[fId] == NULL) {
-        printf("\nInvalid ID or file has been closed!\n");
-        machine -> WriteRegister(2, -1);
-    }
-
-    delete fileSystem -> openFile[fId];
-    machine -> WriteRegister(2, 0);
-    printf("\nClose file succesful!\n");
-}
 
 // Exception handler
 void ExceptionHandler(ExceptionType which) {
@@ -336,18 +257,6 @@ void ExceptionHandler(ExceptionType which) {
 
                 case SC_PrintString:
                     PrintStringHandler();
-                    break;
-
-                case SC_CreateFile:
-                    CreateFileHandler();
-                    break;
-                
-                case SC_OpenFile:
-                    OpenFileHandler();
-                    break;
-
-                case SC_CloseFile:
-                    CloseFileHandler();
                     break;
             }
 
