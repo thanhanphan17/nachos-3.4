@@ -228,16 +228,33 @@ OpenFile *
 FileSystem::Open(char *name)
 { 
     Directory *directory = new Directory(NumDirEntries);
-    OpenFile *openFile = NULL;
+    // OpenFile *openFile = NULL;
     int sector;
 
     DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0) 		
-	openFile = new OpenFile(sector);	// name was found in directory 
+	this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
     delete directory;
-    return openFile;				// return NULL if not found
+    this -> idFile++;
+    return this -> openFile[this -> idFile - 1];				// return NULL if not found
+}
+
+OpenFile *
+FileSystem::Open(char *name, int status) { 
+    Directory *directory = new Directory(NumDirEntries);
+    // OpenFile *openFile = NULL;
+    int sector;
+
+    DEBUG('f', "Opening file %s\n", name);
+    directory->FetchFrom(directoryFile);
+    sector = directory->Find(name); 
+    if (sector >= 0) 		
+	this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
+    delete directory;
+    this -> idFile++;
+    return this -> openFile[this -> idFile - 1];				// return NULL if not found
 }
 
 //----------------------------------------------------------------------

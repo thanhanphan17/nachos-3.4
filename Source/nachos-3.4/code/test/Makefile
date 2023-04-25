@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort
+all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort rwfile
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -107,3 +107,10 @@ bbsort.o: bbsort.c
 bbsort: bbsort.o start.o
 	$(LD) $(LDFLAGS) start.o bbsort.o -o bbsort.coff
 	../bin/coff2noff bbsort.coff bbsort
+
+# Add rwfile to compile 
+rwfile.o: rwfile.c
+	$(CC) $(CFLAGS) -c rwfile.c
+rwfile: rwfile.o start.o
+	$(LD) $(LDFLAGS) start.o rwfile.o -o rwfile.coff
+	../bin/coff2noff rwfile.coff rwfile

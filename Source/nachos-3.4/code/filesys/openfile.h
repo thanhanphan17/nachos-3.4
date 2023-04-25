@@ -28,31 +28,44 @@
 					// See definitions listed under #else
 class OpenFile {
   public:
+	int status;
+
     OpenFile(int f) { file = f; currentOffset = 0; }	// open the file
+	OpenFile(int f, int status) { file = f; currentOffset = 0; this -> status = status; } // open file in specific status
     ~OpenFile() { Close(file); }			// close the file
 
     int ReadAt(char *into, int numBytes, int position) { 
-    		Lseek(file, position, 0); 
+		Lseek(file, position, 0); 
 		return ReadPartial(file, into, numBytes); 
-		}	
+	}	
     int WriteAt(char *from, int numBytes, int position) { 
-    		Lseek(file, position, 0); 
+		Lseek(file, position, 0); 
 		WriteFile(file, from, numBytes); 
 		return numBytes;
-		}	
+	}	
     int Read(char *into, int numBytes) {
 		int numRead = ReadAt(into, numBytes, currentOffset); 
 		currentOffset += numRead;
 		return numRead;
-    		}
+    }
     int Write(char *from, int numBytes) {
 		int numWritten = WriteAt(from, numBytes, currentOffset); 
 		currentOffset += numWritten;
 		return numWritten;
-		}
+	}
 
     int Length() { Lseek(file, 0, 2); return Tell(file); }
-    
+
+	void Seek(int position) {
+		Lseek(file, position, 0); 
+		this -> currentOffset = position;
+	}
+
+	int GetCursorPosition() {
+		currentOffset = Tell(file);
+		return currentOffset;
+	}
+
   private:
     int file;
     int currentOffset;
@@ -63,8 +76,11 @@ class FileHeader;
 
 class OpenFile {
   public:
+	int status;
+	
     OpenFile(int sector);		// Open a file whose header is located
 					// at "sector" on the disk
+	OpenFile(int sector, int status);
     ~OpenFile();			// Close the file
 
     void Seek(int position); 		// Set the position from which to 
@@ -85,7 +101,14 @@ class OpenFile {
 					// file (this interface is simpler 
 					// than the UNIX idiom -- lseek to 
 					// end of file, tell, lseek back 
-    
+    int GetCursorPosition() {
+		return seekPosition;
+	}
+
+	int GetEndPosition() {
+		return this -> Length();
+	}
+
   private:
     FileHeader *hdr;			// Header for this file 
     int seekPosition;			// Current position within the file

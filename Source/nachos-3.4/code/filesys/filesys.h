@@ -62,7 +62,9 @@ class FileSystem {
 		OpenFile *cIn = this -> Open("inConsole", 0);	// id = 0
 		OpenFile *cOut = this -> Open("outConsole", 0);	// id = 1
 		this -> openFile[0] = cIn;
+		this -> openFile[0] -> status = 0;
 		this -> openFile[1] = cOut;
+		this -> openFile[1] -> status = 1;
 
 		this -> idFile = 1;
 
@@ -77,20 +79,28 @@ class FileSystem {
 	}
 
     bool Create(char *name, int initialSize) { 
-	int fileDescriptor = OpenForWrite(name);
+		int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
-	Close(fileDescriptor); 
-	return TRUE; 
+		if (fileDescriptor == -1) return FALSE;
+		Close(fileDescriptor); 
+		return TRUE; 
 	}
 
     OpenFile* Open(char *name) {
-	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+		int fileDescriptor = OpenForReadWrite(name, FALSE);
 
-	  if (fileDescriptor == -1) return NULL;
-	  this -> idFile++;
-	  return new OpenFile(fileDescriptor);
-      }
+		if (fileDescriptor == -1) return NULL;
+		this -> idFile++;
+		return new OpenFile(fileDescriptor);
+    }
+
+	OpenFile* Open(char *name, int status) {
+		int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+		if (fileDescriptor == -1) return NULL;
+		this -> idFile++;
+		return new OpenFile(fileDescriptor, status);
+    }
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
@@ -99,6 +109,9 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
+	OpenFile **openFile;
+	int idFile;
+
     FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
@@ -110,6 +123,8 @@ class FileSystem {
 					// Create a file (UNIX creat)
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
+	
+    OpenFile* Open(char *name, int status); 	// Open a file with status (UNIX open)
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 

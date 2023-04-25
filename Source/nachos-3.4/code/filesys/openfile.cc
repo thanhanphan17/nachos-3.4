@@ -34,6 +34,15 @@ OpenFile::OpenFile(int sector)
     seekPosition = 0;
 }
 
+OpenFile::OpenFile(int sector, int status)
+{ 
+    hdr = new FileHeader;
+    hdr->FetchFrom(sector);
+    seekPosition = 0;
+    this -> status = status;
+}
+
+
 //----------------------------------------------------------------------
 // OpenFile::~OpenFile
 // 	Close a Nachos file, de-allocating any in-memory data structures.
@@ -55,6 +64,8 @@ OpenFile::~OpenFile()
 void
 OpenFile::Seek(int position)
 {
+    // printf("\nseek: %d", this -> seekPosition);
+    // printf("\npos: %d", position);
     seekPosition = position;
 }	
 
