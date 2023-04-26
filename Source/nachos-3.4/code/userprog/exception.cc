@@ -22,8 +22,10 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "syscall.h"
+
 #include "system.h"
+
+#include "syscall.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -427,7 +429,8 @@ void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2);
 
     switch (which) {
-            // Handle system call exceptions
+        
+        // Handle system call exceptions
         case SyscallException: {
             switch (type) {
                 case SC_Halt:
