@@ -229,29 +229,31 @@ void CreateFileHandler() {
     if (strlen(fileName) == 0) {
         printf("\nInvalid file name!\n");
         machine -> WriteRegister(2, -1);
+        delete[] fileName;
+        return;
     } 
 
-    else if (fileName == NULL) {
+    if (fileName == NULL) {
         printf("\nSystem's memory ran out!\n");
         machine -> WriteRegister(2, -1);
+        return;
     } 
     
-    else if (fileSystem -> Create(fileName, 0) == false) {
+    if (fileSystem -> Create(fileName, 0) == false) {
         printf("\nCreating file '%s' error!\n", fileName);
         machine -> WriteRegister(2, -1);
+        delete[] fileName;
+        return;
     } 
     
-    else {
-        printf("\nCreating file '%s' success!\n", fileName);
-        machine -> WriteRegister(2, 0);
-    }
-    
+    printf("\nCreating file '%s' success!\n", fileName);
+    machine -> WriteRegister(2, 0);
     delete[] fileName;
 }
 
 void OpenFileHandler() {
     int virtualAddress = machine -> ReadRegister(4);
-    int type = machine -> ReadRegister(5);
+    int status = machine -> ReadRegister(5);
     char *fileName;
 
     if (fileSystem -> idFile > 10) {
@@ -259,7 +261,7 @@ void OpenFileHandler() {
         return;
     }
 
-    fileName = User2System(virtualAddress, FILE_NAME_LEN + 1);
+    fileName = User2System(virtualAddress, 33);
 
     if (strcmp(fileName, "inConsole") == 0) {
         printf("\nConsole Input!\n");
@@ -275,7 +277,7 @@ void OpenFileHandler() {
         return;
     }
 
-    if ((fileSystem -> openFile[fileSystem -> idFile] = fileSystem -> Open(fileName, type)) != NULL) {
+    if ((fileSystem -> openFile[fileSystem -> idFile] = fileSystem -> Open(fileName, status)) != NULL) {
         printf("\n'%s' has opened!\n", fileName);
         machine -> WriteRegister(2, fileSystem -> idFile - 1);
     } else {
@@ -300,10 +302,11 @@ void CloseFileHandler() {
         machine -> WriteRegister(2, -1);
         return;
     }
-
+    
     delete fileSystem -> openFile[fId];
+    fileSystem -> openFile[fId] = NULL;
     machine -> WriteRegister(2, 0);
-    printf("\nClose file succesful!\n");
+    printf("\nClose file successful!\n");
 }
 
 void ReadFileHandler() {
@@ -311,9 +314,7 @@ void ReadFileHandler() {
     int charCount = machine -> ReadRegister(5);
     int fId = machine -> ReadRegister(6);
 
-    // printf("\nvir add - r: %d", virtualAddress);
-    // printf("\nchar count - r: %d", charCount);
-    // printf("\ninput file id - r: %d", fId);
+    int strLen = 0;
 
     if (fId > fileSystem -> idFile || fId < 0) {
         printf("\nInvalid file ID!\n");
@@ -334,7 +335,10 @@ void ReadFileHandler() {
     }
 
     char *buffer = User2System(virtualAddress, charCount);
-    // printf("%s", buffer);
+    while (buffer[strLen] != '\0' && buffer[strLen] != '\n') {
+        strLen++;
+    }
+    buffer[strLen] = '\n';
 
     // reading from console
     if (fId == 0) {
@@ -348,12 +352,11 @@ void ReadFileHandler() {
 
     // reading from file
     fileSystem -> openFile[fId] -> Seek(0);
-    int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    // printf("position: %d", prevPosition);
-    if ((fileSystem -> openFile[fId] -> Read(buffer, charCount)) > 0) {
-        int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-        System2User(virtualAddress, charCount, buffer);
-        machine -> WriteRegister(2, currentPosition - prevPosition + 1);
+    // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+    if ((fileSystem -> openFile[fId] -> Read(buffer, strLen)) > 0) {
+        // int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+        System2User(virtualAddress, strLen, buffer);
+        machine -> WriteRegister(2, strLen);
     } else {
         machine -> WriteRegister(2, -1);
     }
@@ -366,7 +369,8 @@ void WriteFileHandler() {
     int charCount = machine -> ReadRegister(5);
     int fId = machine -> ReadRegister(6);
     
-    int len = 0;
+    int strLen = 0;
+    int idx = 0;
 
     if (fId > fileSystem -> idFile || fId < 0) {
         printf("\nInvalid file ID!\n");
@@ -386,24 +390,25 @@ void WriteFileHandler() {
         return;
     }
 
-    if (fileSystem -> openFile[fId] -> status == 0) {
+    if (fileSystem -> openFile[fId] -> status == 1) {
         printf("\nCan not modify read-only file!\n");
         machine -> WriteRegister(2, -1);
         return;
     }
 
     char *buffer = User2System(virtualAddress, charCount);
-
-    // printf("\n%s\n", buffer);
+    while (buffer[strLen] != '\0' && buffer[strLen] != '\n') {
+        strLen++;
+    }
+    buffer[strLen] = '\n';
 
     // writing to console
-    int idx = 0;
     if (fId == 1) {
         while (buffer[idx] != '\0' && buffer[idx] != '\n') {
             synchConsole -> Write(buffer + idx, 1);
             idx++;
         }
-        buffer[idx] = '\n';
+        // buffer[idx] = '\n';
         synchConsole -> Write(buffer + idx, 1);
          
         machine -> WriteRegister(2, idx - 1);
@@ -412,11 +417,11 @@ void WriteFileHandler() {
     }
 
     // writing into file
-    int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    if ((fileSystem -> openFile[fId] -> Write(buffer, charCount)) > 0) {
-        int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-        System2User(virtualAddress, currentPosition - prevPosition, buffer);
-        machine -> WriteRegister(2, currentPosition - prevPosition + 1);
+    // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+    if ((fileSystem -> openFile[fId] -> Write(buffer, strLen)) > 0) {
+        // int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+        System2User(virtualAddress, strLen, buffer);
+        machine -> WriteRegister(2, strLen);
     } else {
         machine -> WriteRegister(2, -1);
     }

@@ -235,7 +235,7 @@ FileSystem::Open(char *name)
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0) 		
-	this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
+	    this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
     delete directory;
     this -> idFile++;
     return this -> openFile[this -> idFile - 1];				// return NULL if not found
@@ -251,7 +251,7 @@ FileSystem::Open(char *name, int status) {
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0) 		
-	this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
+	    this -> openFile[this -> idFile] = new OpenFile(sector);	// name was found in directory 
     delete directory;
     this -> idFile++;
     return this -> openFile[this -> idFile - 1];				// return NULL if not found

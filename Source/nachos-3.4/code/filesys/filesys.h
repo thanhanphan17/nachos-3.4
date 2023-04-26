@@ -59,23 +59,19 @@ class FileSystem {
 		this -> Create("inConsole", 0);
 		this -> Create("outConsole", 0);
 
-		OpenFile *cIn = this -> Open("inConsole", 0);	// id = 0
-		OpenFile *cOut = this -> Open("outConsole", 0);	// id = 1
-		this -> openFile[0] = cIn;
-		this -> openFile[0] -> status = 0;
-		this -> openFile[1] = cOut;
-		this -> openFile[1] -> status = 1;
+		this -> openFile[0] = this -> Open("inConsole", 0);
+		this -> openFile[0] -> status = 1;
+		this -> openFile[1] = this -> Open("outConsole", 0);
+		this -> openFile[1] -> status = 0;
 
 		this -> idFile = 1;
-
-		delete cIn;
-		delete cOut;
 	}
 
 	~FileSystem() {
 		for (int i = 0; i < FILE_OPEN_MAX; ++i) {
 			if (this -> openFile[i] != NULL) delete this -> openFile[i];
 		}
+		delete[] this -> openFile;
 	}
 
     bool Create(char *name, int initialSize) { 
