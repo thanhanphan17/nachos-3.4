@@ -22,10 +22,8 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-
-#include "system.h"
-
 #include "syscall.h"
+#include "system.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -51,52 +49,45 @@
 //----------------------------------------------------------------------
 
 void IncreaseProgramCounter() {
-    machine -> WriteRegister(PrevPCReg,
-        machine -> ReadRegister(PCReg));
+    machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
 
-    machine -> WriteRegister(PCReg,
-        machine -> ReadRegister(NextPCReg));
+    machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
 
-    machine -> WriteRegister(NextPCReg,
-        machine -> ReadRegister(NextPCReg) + 4);
+    machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 }
 
-char * User2System(int virtAddr, int limit) {
-    int i; // index
+char *User2System(int virtAddr, int limit) {
+    int i;  // index
     int oneChar;
-    char * kernelBuf = NULL;
+    char *kernelBuf = NULL;
 
-    kernelBuf = new char[limit + 1]; // need for terminal string
+    kernelBuf = new char[limit + 1];  // need for terminal string
 
-    if (kernelBuf == NULL)
-        return kernelBuf;
+    if (kernelBuf == NULL) return kernelBuf;
 
     memset(kernelBuf, 0, limit + 1);
 
     // printf("\n Filename u2s:");
     for (i = 0; i < limit; i++) {
-        machine -> ReadMem(virtAddr + i, 1, & oneChar);
-        kernelBuf[i] = (char) oneChar;
+        machine->ReadMem(virtAddr + i, 1, &oneChar);
+        kernelBuf[i] = (char)oneChar;
         // printf("%c",kernelBuf[i]);
-        if (oneChar == 0)
-            break;
+        if (oneChar == 0) break;
     }
 
     return kernelBuf;
 }
 
-int System2User(int virtAddr, int len, char * buffer) {
-    if (len < 0)
-        return -1;
+int System2User(int virtAddr, int len, char *buffer) {
+    if (len < 0) return -1;
 
-    if (len == 0)
-        return len;
+    if (len == 0) return len;
 
     int i = 0;
     int oneChar = 0;
     do {
-        oneChar = (int) buffer[i];
-        machine -> WriteMem(virtAddr + i, 1, oneChar);
+        oneChar = (int)buffer[i];
+        machine->WriteMem(virtAddr + i, 1, oneChar);
         i++;
     } while (i < len && oneChar != 0);
 
@@ -106,19 +97,19 @@ int System2User(int virtAddr, int len, char * buffer) {
 void HaltHandler() {
     DEBUG('a', "Shutdown, initiated by user program!");
     printf("\n\nShutdown, initiated by user program!");
-    interrupt -> Halt();
+    interrupt->Halt();
 }
 
 void ReadIntHandler() {
     DEBUG('a', "Read integer number from console.\n");
 
     // Use a fixed-size buffer on the stack
-    char buffer[INT_LEN]; 
+    char buffer[INT_LEN];
 
-    int length = synchConsole -> Read(buffer, INT_LEN);
+    int length = synchConsole->Read(buffer, INT_LEN);
     int result = 0, index = 0;
 
-    bool valid = true; // check if input is a valid number
+    bool valid = true;  // check if input is a valid number
 
     if (buffer[index] == '-') {
         // If the first character is '-', increment the index and set the sign
@@ -126,7 +117,7 @@ void ReadIntHandler() {
 
         // input only contains '-'
         if (length == 1) {
-            machine -> WriteRegister(2, 0);
+            machine->WriteRegister(2, 0);
             printf("\nYour input is not an integer number!\n");
             valid = false;
         }
@@ -137,7 +128,7 @@ void ReadIntHandler() {
             // If the character is a digit, add it to the result
             result = result * 10 + (buffer[index] - '0');
         } else {
-            machine -> WriteRegister(2, 0);
+            machine->WriteRegister(2, 0);
             printf("\nYour input is not an integer number!\n");
             valid = false;
 
@@ -153,12 +144,12 @@ void ReadIntHandler() {
     }
 
     if (valid) {
-        machine -> WriteRegister(2, result);
+        machine->WriteRegister(2, result);
     }
 }
 
 void PrintIntHandler() {
-    int n = machine -> ReadRegister(4);
+    int n = machine->ReadRegister(4);
     bool negative = false;
 
     if (n < 0) {
@@ -178,86 +169,85 @@ void PrintIntHandler() {
     }
 
     for (int j = i - 1; j >= 0; j--) {
-        synchConsole -> Write(&s[j], 1);
+        synchConsole->Write(&s[j], 1);
     }
 }
 
 void ReadCharHandler() {
     char buffer[1];
-    int length = synchConsole -> Read(buffer, 1);
+    int length = synchConsole->Read(buffer, 1);
 
     if (length != 1) {
         printf("\nError occurred!\n");
         return;
     }
 
-    machine -> WriteRegister(2, buffer[0]);
+    machine->WriteRegister(2, buffer[0]);
 }
 
 void PrintCharHandler() {
-    char c = (char) machine -> ReadRegister(4);
-    synchConsole -> Write( & c, 1);
+    char c = (char)machine->ReadRegister(4);
+    synchConsole->Write(&c, 1);
 }
 
 void ReadStringHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    int length = machine -> ReadRegister(5);
-    char * buffer = new char[length + 1];
+    int virtualAddress = machine->ReadRegister(4);
+    int length = machine->ReadRegister(5);
+    char *buffer = new char[length + 1];
 
-    synchConsole -> Read(buffer, length);
+    synchConsole->Read(buffer, length);
     System2User(virtualAddress, length, buffer);
 
     delete[] buffer;
 }
 
 void PrintStringHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    char * buffer = User2System(virtualAddress, 255);
+    int virtualAddress = machine->ReadRegister(4);
+    char *buffer = User2System(virtualAddress, 255);
     int length = 0;
     while (buffer[length] != '\0') {
         ++length;
     }
 
-    synchConsole -> Write(buffer, length + 1);
+    synchConsole->Write(buffer, length + 1);
 }
 
 void CreateFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    char* fileName = User2System(virtualAddress, FILE_NAME_LEN);
-
+    int virtualAddress = machine->ReadRegister(4);
+    char *fileName = User2System(virtualAddress, FILE_NAME_LEN);
 
     if (strlen(fileName) == 0) {
         printf("\nInvalid file name!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         delete[] fileName;
         return;
-    } 
+    }
 
     if (fileName == NULL) {
         printf("\nSystem's memory ran out!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
-    } 
-    
-    if (fileSystem -> Create(fileName, 0) == false) {
+    }
+
+    if (fileSystem->Create(fileName, 0) == false) {
         printf("\nCreating file '%s' error!\n", fileName);
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         delete[] fileName;
         return;
-    } 
-    
+    }
+
     printf("\nCreating file '%s' success!\n", fileName);
-    machine -> WriteRegister(2, 0);
+    machine->WriteRegister(2, 0);
     delete[] fileName;
 }
 
 void OpenFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    int status = machine -> ReadRegister(5);
+    int virtualAddress = machine->ReadRegister(4);
+    int status = machine->ReadRegister(5);
     char *fileName;
 
-    if (fileSystem -> idFile > 10) {
-        machine -> WriteRegister(2, -1);
+    if (fileSystem->idFile > 10) {
+        machine->WriteRegister(2, -1);
         return;
     }
 
@@ -265,72 +255,73 @@ void OpenFileHandler() {
 
     if (strcmp(fileName, "inConsole") == 0) {
         printf("\nConsole Input!\n");
-        machine -> WriteRegister(2, 0);
+        machine->WriteRegister(2, 0);
         delete[] fileName;
         return;
     }
 
     if (strcmp(fileName, "outConsole") == 0) {
         printf("\nConsole Output!\n");
-        machine -> WriteRegister(2, 1);
+        machine->WriteRegister(2, 1);
         delete[] fileName;
         return;
     }
 
-    if ((fileSystem -> openFile[fileSystem -> idFile] = fileSystem -> Open(fileName, status)) != NULL) {
+    if ((fileSystem->openFile[fileSystem->idFile] =
+             fileSystem->Open(fileName, status)) != NULL) {
         printf("\n'%s' has opened!\n", fileName);
-        machine -> WriteRegister(2, fileSystem -> idFile - 1);
+        machine->WriteRegister(2, fileSystem->idFile - 1);
     } else {
         printf("\nCan not open '%s'\n", fileName);
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
     }
 
     delete[] fileName;
 }
 
 void CloseFileHandler() {
-    int fId = machine -> ReadRegister(4);
-    
-    if (fId > fileSystem -> idFile) {
+    int fId = machine->ReadRegister(4);
+
+    if (fId > fileSystem->idFile) {
         printf("\nInvalid file ID! Closing file failed!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem -> openFile[fId] == NULL) {
+    if (fileSystem->openFile[fId] == NULL) {
         printf("\nInvalid ID or file has been closed!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
-    
-    delete fileSystem -> openFile[fId];
-    fileSystem -> openFile[fId] = NULL;
-    machine -> WriteRegister(2, 0);
+
+    delete fileSystem->openFile[fId];
+    fileSystem->openFile[fId] = NULL;
+    machine->WriteRegister(2, 0);
     printf("\nClose file successful!\n");
 }
 
 void ReadFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    int charCount = machine -> ReadRegister(5);
-    int fId = machine -> ReadRegister(6);
+    int virtualAddress = machine->ReadRegister(4);
+    int charCount = machine->ReadRegister(5);
+    int fId = machine->ReadRegister(6);
 
     int strLen = 0;
 
-    if (fId > fileSystem -> idFile || fId < 0) {
+    if (fId > fileSystem->idFile || fId < 0) {
         printf("\nInvalid file ID!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
     if (fId == 1) {
         printf("\nOut Console error!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem -> openFile[fId] == NULL) {
+    if (fileSystem->openFile[fId] == NULL) {
         printf("\nFile undefined error!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
@@ -342,57 +333,58 @@ void ReadFileHandler() {
 
     // reading from console
     if (fId == 0) {
-        int len = synchConsole -> Read(buffer, charCount);
+        int len = synchConsole->Read(buffer, charCount);
         System2User(virtualAddress, len, buffer);
-        machine -> WriteRegister(2, len - 1);    
-    
+        machine->WriteRegister(2, len - 1);
+
         delete[] buffer;
         return;
     }
 
     // reading from file
-    fileSystem -> openFile[fId] -> Seek(0);
+    fileSystem->openFile[fId]->Seek(0);
     // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    if ((fileSystem -> openFile[fId] -> Read(buffer, strLen)) > 0) {
-        // int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+    if ((fileSystem->openFile[fId]->Read(buffer, strLen)) > 0) {
+        // int currentPosition = fileSystem -> openFile[fId] ->
+        // GetCursorPosition();
         System2User(virtualAddress, strLen, buffer);
-        machine -> WriteRegister(2, strLen);
+        machine->WriteRegister(2, strLen);
     } else {
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
     }
 
     delete[] buffer;
 }
 
 void WriteFileHandler() {
-    int virtualAddress = machine -> ReadRegister(4);
-    int charCount = machine -> ReadRegister(5);
-    int fId = machine -> ReadRegister(6);
-    
+    int virtualAddress = machine->ReadRegister(4);
+    int charCount = machine->ReadRegister(5);
+    int fId = machine->ReadRegister(6);
+
     int strLen = 0;
     int idx = 0;
 
-    if (fId > fileSystem -> idFile || fId < 0) {
+    if (fId > fileSystem->idFile || fId < 0) {
         printf("\nInvalid file ID!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
     if (fId == 0) {
         printf("\nIn Console error!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem -> openFile[fId] == NULL) {
+    if (fileSystem->openFile[fId] == NULL) {
         printf("\nFile undefined error!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem -> openFile[fId] -> status == 1) {
+    if (fileSystem->openFile[fId]->status == 1) {
         printf("\nCan not modify read-only file!\n");
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
         return;
     }
 
@@ -405,25 +397,26 @@ void WriteFileHandler() {
     // writing to console
     if (fId == 1) {
         while (buffer[idx] != '\0' && buffer[idx] != '\n') {
-            synchConsole -> Write(buffer + idx, 1);
+            synchConsole->Write(buffer + idx, 1);
             idx++;
         }
         // buffer[idx] = '\n';
-        synchConsole -> Write(buffer + idx, 1);
-         
-        machine -> WriteRegister(2, idx - 1);
+        synchConsole->Write(buffer + idx, 1);
+
+        machine->WriteRegister(2, idx - 1);
         delete[] buffer;
         return;
     }
 
     // writing into file
     // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    if ((fileSystem -> openFile[fId] -> Write(buffer, strLen)) > 0) {
-        // int currentPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
+    if ((fileSystem->openFile[fId]->Write(buffer, strLen)) > 0) {
+        // int currentPosition = fileSystem -> openFile[fId] ->
+        // GetCursorPosition();
         System2User(virtualAddress, strLen, buffer);
-        machine -> WriteRegister(2, strLen);
+        machine->WriteRegister(2, strLen);
     } else {
-        machine -> WriteRegister(2, -1);
+        machine->WriteRegister(2, -1);
     }
 
     delete[] buffer;
@@ -431,7 +424,7 @@ void WriteFileHandler() {
 
 // Exception handler
 void ExceptionHandler(ExceptionType which) {
-    int type = machine -> ReadRegister(2);
+    int type = machine->ReadRegister(2);
 
     switch (which) {
             // Handle system call exceptions
@@ -468,7 +461,7 @@ void ExceptionHandler(ExceptionType which) {
                 case SC_CreateFile:
                     CreateFileHandler();
                     break;
-                
+
                 case SC_OpenFile:
                     OpenFileHandler();
                     break;
@@ -484,7 +477,6 @@ void ExceptionHandler(ExceptionType which) {
                 case SC_WriteFile:
                     WriteFileHandler();
                     break;
-
             }
 
             IncreaseProgramCounter();
@@ -498,43 +490,57 @@ void ExceptionHandler(ExceptionType which) {
         case PageFaultException:
             DEBUG('a', "\nPageFaultException: No valid translation found!");
             printf("\n\nPageFaultException: No valid translation found!");
-            interrupt -> Halt();
+            interrupt->Halt();
             break;
 
         case ReadOnlyException:
-            DEBUG('a', "\nReadOnlyException: Write attempted to page marked read-only!");
-            printf("\n\nReadOnlyException: Write attempted to page marked read-only!");
-            interrupt -> Halt();
+            DEBUG('a',
+                  "\nReadOnlyException: Write attempted to page marked "
+                  "read-only!");
+            printf(
+                "\n\nReadOnlyException: Write attempted to page marked "
+                "read-only!");
+            interrupt->Halt();
             break;
 
         case BusErrorException:
-            DEBUG('a', "\nBusErrorException: Translation resulted in an invalid physical address!");
-            printf("\n\nBusErrorException: Translation resulted in an invalid physical address!");
-            interrupt -> Halt();
+            DEBUG('a',
+                  "\nBusErrorException: Translation resulted in an invalid "
+                  "physical address!");
+            printf(
+                "\n\nBusErrorException: Translation resulted in an invalid "
+                "physical address!");
+            interrupt->Halt();
             break;
 
         case AddressErrorException:
-            DEBUG('a', "\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
-            printf("\n\nAddressErrorException: Unaligned reference or one that was beyond the end of the address space!");
-            interrupt -> Halt();
+            DEBUG('a',
+                  "\nAddressErrorException: Unaligned reference or one that "
+                  "was beyond the end of the address space!");
+            printf(
+                "\n\nAddressErrorException: Unaligned reference or one that "
+                "was beyond the end of the address space!");
+            interrupt->Halt();
             break;
 
         case OverflowException:
             DEBUG('a', "\nOverflowException: Integer overflow in add or sub!");
             printf("\n\nOverflowException: Integer overflow in add or sub!");
-            interrupt -> Halt();
+            interrupt->Halt();
             break;
 
         case IllegalInstrException:
-            DEBUG('a', "\nIllegalInstrException: Unimplemented or reserved instr!");
-            printf("\n\nIllegalInstrException: Unimplemented or reserved instr!");
-            interrupt -> Halt();
+            DEBUG('a',
+                  "\nIllegalInstrException: Unimplemented or reserved instr!");
+            printf(
+                "\n\nIllegalInstrException: Unimplemented or reserved instr!");
+            interrupt->Halt();
             break;
 
         case NumExceptionTypes:
             DEBUG('a', "\nNumExceptionTypes: Num exeption types occurred!");
             printf("\n\nNum exeption types occurred!");
-            interrupt -> Halt();
+            interrupt->Halt();
             break;
     }
 }

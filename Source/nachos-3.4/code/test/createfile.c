@@ -7,7 +7,7 @@ int main() {
     char *fileName;
 
     // create file
-    PrintString("\n----Enter creating filename: ");
+    PrintString("\n----Enter filename to create: ");
     ReadString(fileName, 20);
     CreateFile(fileName);
 
