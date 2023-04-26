@@ -19,10 +19,12 @@
  * is being asked for
  */
 #define SC_Halt 0
+
 #define SC_Exit 1
 #define SC_Exec 2
 #define SC_Join 3
 #define SC_Create 4
+
 #define SC_Open 5
 #define SC_Read 6
 #define SC_Write 7
@@ -42,6 +44,10 @@
 #define SC_CloseFile 19
 #define SC_ReadFile 20
 #define SC_WriteFile 21
+
+#define SC_CreateSemaphore 22
+#define SC_Wait 23
+#define SC_Singal 24
 
 #define INT_LEN 11
 #define FILE_NAME_LEN 255
@@ -89,7 +95,7 @@ int WriteFile(char *buffer, int charcount, OpenFileId id); // Write file
 /* Address space control operations: Exit, Exec, and Join */
 
 /* This user program is done (status = 0 means exited normally). */
-void Exit(int status);
+void Exit(int exitCode);
 
 /* A unique identifier for an executing user program (address space) */
 typedef int SpaceId;
@@ -103,6 +109,12 @@ SpaceId Exec(char *name);
  * Return the exit status.
  */
 int Join(SpaceId id);
+
+int CreateSemaphore(char* name, int semval);
+
+int Wait(char* name);
+
+int Signal(char* name);
 
 /* File system operations: Create, Open, Read, Write, Close
  * These functions are patterned after UNIX -- files represent

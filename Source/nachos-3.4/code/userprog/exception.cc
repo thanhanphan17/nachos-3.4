@@ -108,7 +108,7 @@ void ReadIntHandler() {
     // Use a fixed-size buffer on the stack
     char buffer[INT_LEN];
 
-    int length = synchConsole->Read(buffer, INT_LEN);
+    int length = gSynchConsole->Read(buffer, INT_LEN);
     int result = 0, index = 0;
 
     bool valid = true;  // check if input is a valid number
@@ -171,13 +171,13 @@ void PrintIntHandler() {
     }
 
     for (int j = i - 1; j >= 0; j--) {
-        synchConsole->Write(&s[j], 1);
+        gSynchConsole->Write(&s[j], 1);
     }
 }
 
 void ReadCharHandler() {
     char buffer[1];
-    int length = synchConsole->Read(buffer, 1);
+    int length = gSynchConsole->Read(buffer, 1);
 
     if (length != 1) {
         printf("\nError occurred!\n");
@@ -189,7 +189,7 @@ void ReadCharHandler() {
 
 void PrintCharHandler() {
     char c = (char)machine->ReadRegister(4);
-    synchConsole->Write(&c, 1);
+    gSynchConsole->Write(&c, 1);
 }
 
 void ReadStringHandler() {
@@ -197,7 +197,7 @@ void ReadStringHandler() {
     int length = machine->ReadRegister(5);
     char *buffer = new char[length + 1];
 
-    synchConsole->Read(buffer, length);
+    gSynchConsole->Read(buffer, length);
     System2User(virtualAddress, length, buffer);
 
     delete[] buffer;
@@ -211,7 +211,7 @@ void PrintStringHandler() {
         ++length;
     }
 
-    synchConsole->Write(buffer, length + 1);
+    gSynchConsole->Write(buffer, length + 1);
 }
 
 void CreateFileHandler() {
@@ -335,7 +335,7 @@ void ReadFileHandler() {
 
     // reading from console
     if (fId == 0) {
-        int len = synchConsole->Read(buffer, charCount);
+        int len = gSynchConsole->Read(buffer, charCount);
         System2User(virtualAddress, len, buffer);
         machine->WriteRegister(2, len - 1);
 
@@ -357,6 +357,18 @@ void ReadFileHandler() {
 
     delete[] buffer;
 }
+
+void ExecHandler() {}
+
+void JoinHandler() {}
+
+void ExitHandler() {}
+
+void CreateSemaphoreHandler() {}
+
+void WaitHandler() {}
+
+void SignalHandler() {}
 
 void WriteFileHandler() {
     int virtualAddress = machine->ReadRegister(4);
@@ -399,11 +411,11 @@ void WriteFileHandler() {
     // writing to console
     if (fId == 1) {
         while (buffer[idx] != '\0' && buffer[idx] != '\n') {
-            synchConsole->Write(buffer + idx, 1);
+            gSynchConsole->Write(buffer + idx, 1);
             idx++;
         }
         // buffer[idx] = '\n';
-        synchConsole->Write(buffer + idx, 1);
+        gSynchConsole->Write(buffer + idx, 1);
 
         machine->WriteRegister(2, idx - 1);
         delete[] buffer;
@@ -429,7 +441,7 @@ void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2);
 
     switch (which) {
-        
+
         // Handle system call exceptions
         case SyscallException: {
             switch (type) {
@@ -479,6 +491,30 @@ void ExceptionHandler(ExceptionType which) {
 
                 case SC_WriteFile:
                     WriteFileHandler();
+                    break;
+                
+                case SC_Exec:
+                    ExecHandler();
+                    break;
+            
+                case SC_Join:
+                    JoinHandler();
+                    break;
+                
+                case SC_Exit:
+                    ExitHandler();
+                    break;
+
+                case SC_CreateSemaphore:
+                    CreateSemaphoreHandler();
+                    break;
+
+                case SC_Wait:
+                    WaitHandler();
+                    break;
+                
+                case SC_Singal:
+                    SignalHandler();
                     break;
             }
 

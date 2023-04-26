@@ -15,6 +15,7 @@
 
 #include "copyright.h"
 #include "filesys.h"
+#include "translate.h"
 
 #define UserStackSize		1024 	// increase this as necessary!
 
@@ -23,14 +24,15 @@ class AddrSpace {
     AddrSpace(OpenFile *executable);	// Create an address space,
 					// initializing it with the program
 					// stored in the file "executable"
+	AddrSpace(char* filename); // Bo sung phuong thuoc khoi tao voi tham so truyen vao: filename
     ~AddrSpace();			// De-allocate an address space
-
+	
     void InitRegisters();		// Initialize user-level CPU registers,
 					// before jumping to user code
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
-
+	
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
