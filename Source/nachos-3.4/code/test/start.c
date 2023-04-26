@@ -58,22 +58,6 @@ Exit:
 	j	$31
 	.end Exit
 
-	.globl Exec
-	.ent	Exec
-Exec:
-	addiu $2,$0,SC_Exec
-	syscall
-	j	$31
-	.end Exec
-
-	.globl Join
-	.ent	Join
-Join:
-	addiu $2,$0,SC_Join
-	syscall
-	j	$31
-	.end Join
-
 	.globl Create
 	.ent	Create
 Create:
@@ -217,6 +201,22 @@ WriteFile:
 	syscall
 	j $31
 	.end WriteFile
+
+	.globl Exec
+	.ent Exec
+Exec:
+	addiu $2, $0, SC_Exec
+	syscall
+	j $31
+	.end Exec
+
+	.globl Join
+	.ent Join
+Join:
+	addiu $2, $0, SC_Join
+	syscall
+	j $31
+	.end Join
 	
 /* dummy function to keep gcc happy */
         .globl  __main

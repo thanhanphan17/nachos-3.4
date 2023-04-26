@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort rwfile createfile rwconsole
+all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort rwfile createfile rwconsole process_a process_b test_exec_join
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -128,3 +128,24 @@ rwconsole.o: rwconsole.c
 rwconsole: rwconsole.o start.o
 	$(LD) $(LDFLAGS) start.o rwconsole.o -o rwconsole.coff
 	../bin/coff2noff rwconsole.coff rwconsole
+
+# Add process_a to compile 
+process_a.o: process_a.c
+	$(CC) $(CFLAGS) -c process_a.c
+process_a: process_a.o start.o
+	$(LD) $(LDFLAGS) start.o process_a.o -o process_a.coff
+	../bin/coff2noff process_a.coff process_a
+
+# Add process_b to compile 
+process_b.o: process_b.c
+	$(CC) $(CFLAGS) -c process_b.c
+process_b: process_b.o start.o
+	$(LD) $(LDFLAGS) start.o process_b.o -o process_b.coff
+	../bin/coff2noff process_b.coff process_b
+
+# Add test_exec_join to compile 
+test_exec_join.o: test_exec_join.c
+	$(CC) $(CFLAGS) -c test_exec_join.c
+test_exec_join: test_exec_join.o start.o
+	$(LD) $(LDFLAGS) start.o test_exec_join.o -o test_exec_join.coff
+	../bin/coff2noff test_exec_join.coff test_exec_join

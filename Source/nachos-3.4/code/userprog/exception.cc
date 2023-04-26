@@ -358,9 +358,38 @@ void ReadFileHandler() {
     delete[] buffer;
 }
 
-void ExecHandler() {}
+void ExecHandler() {
+    int virtAddr = machine->ReadRegister(4);  
+    char *name = User2System(virtAddr, 255);  
 
-void JoinHandler() {}
+    if (name == NULL) {
+        DEBUG('a', "\nCan not execute program with null name");
+        printf("\nCan not execute program with null name");
+        machine->WriteRegister(2, -1);
+        return;
+    }
+
+    if (fileSystem->Open(name) == NULL) {
+        DEBUG('a', "\nSC_Exec: Can't open this file.");
+        printf("\nSC_Exec: Can't open this file.");
+        machine->WriteRegister(2, -1);
+        return;
+    }
+
+    int id = pTab->ExecUpdate(name);
+    machine->WriteRegister(2, id);
+
+    delete[] name;
+    return;
+}
+
+void JoinHandler() {
+    int id = machine->ReadRegister(4);  
+    int res = pTab->JoinUpdate(id);
+
+    machine->WriteRegister(2, res);
+    return;
+}
 
 void ExitHandler() {}
 
