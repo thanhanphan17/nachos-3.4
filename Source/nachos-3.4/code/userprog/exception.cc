@@ -22,10 +22,9 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-
 #include "system.h"
-
 #include "syscall.h"
+#include "directory.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -205,7 +204,7 @@ void ReadStringHandler() {
 
 void PrintStringHandler() {
     int virtualAddress = machine->ReadRegister(4);
-    char *buffer = User2System(virtualAddress, 255);
+    char *buffer = User2System(virtualAddress, MAX_SIZE);
     int length = 0;
     while (buffer[length] != '\0') {
         ++length;
@@ -215,172 +214,174 @@ void PrintStringHandler() {
 }
 
 void CreateFileHandler() {
-    int virtualAddress = machine->ReadRegister(4);
-    char *fileName = User2System(virtualAddress, FILE_NAME_LEN);
-
-    if (strlen(fileName) == 0) {
-        printf("\nInvalid file name!\n");
-        machine->WriteRegister(2, -1);
-        delete[] fileName;
-        return;
+    /*load file name from user to kernel*/
+    int name = machine->ReadRegister(4);
+    char s[FileNameMaxLen+1] = {0};
+    for (int i = 0; i < FileNameMaxLen; ++i) {
+        int oneChar = 0;
+        machine->ReadMem(name+i, 1, &oneChar);
+        if (oneChar == 0) break;
+        s[i] = (char)oneChar;
     }
-
-    if (fileName == NULL) {
-        printf("\nSystem's memory ran out!\n");
-        machine->WriteRegister(2, -1);
-        return;
-    }
-
-    if (fileSystem->Create(fileName, 0) == false) {
-        printf("\nCreating file '%s' error!\n", fileName);
-        machine->WriteRegister(2, -1);
-        delete[] fileName;
-        return;
-    }
-
-    printf("\nCreating file '%s' success!\n", fileName);
-    machine->WriteRegister(2, 0);
-    delete[] fileName;
+    /*create new file*/
+    bool chk = fileSystem->Create(s, 0);
+    if (chk) machine->WriteRegister(2, 0);
+    else machine->WriteRegister(2, -1);
 }
 
 void OpenFileHandler() {
-    int virtualAddress = machine->ReadRegister(4);
-    int status = machine->ReadRegister(5);
-    char *fileName;
-
-    if (fileSystem->idFile > 10) {
+    /*load file name from user to kernel*/
+    int name = machine->ReadRegister(4);
+    char s[FileNameMaxLen+1] = {0};
+    for (int j = 0; j < FileNameMaxLen; ++j) {
+        int oneChar = 0;
+        machine->ReadMem(name+j, 1, &oneChar);
+        if (oneChar == 0) break;
+        s[j] = (char)oneChar;
+    }
+    /*open file*/
+    OpenFile* pFile = fileSystem->Open(s);
+    if (pFile == NULL) {
         machine->WriteRegister(2, -1);
         return;
     }
-
-    fileName = User2System(virtualAddress, 33);
-
-    if (strcmp(fileName, "inConsole") == 0) {
-        printf("\nConsole Input!\n");
-        machine->WriteRegister(2, 0);
-        delete[] fileName;
-        return;
-    }
-
-    if (strcmp(fileName, "outConsole") == 0) {
-        printf("\nConsole Output!\n");
-        machine->WriteRegister(2, 1);
-        delete[] fileName;
-        return;
-    }
-
-    if ((fileSystem->openFile[fileSystem->idFile] =
-             fileSystem->Open(fileName, status)) != NULL) {
-        printf("\n'%s' has opened!\n", fileName);
-        machine->WriteRegister(2, fileSystem->idFile - 1);
-    } else {
-        printf("\nCan not open '%s'\n", fileName);
+    /*load file type from user to kernel*/
+    int type = machine->ReadRegister(5);
+    /*add open file to file table*/
+    int ret = gFTable->Open(pFile, type);
+    if (ret == -1) {
+        delete pFile;
         machine->WriteRegister(2, -1);
+        return;
     }
-
-    delete[] fileName;
+    else {
+        machine->WriteRegister(2, ret+2);
+        return;
+    }
 }
 
 void CloseFileHandler() {
-    int fId = machine->ReadRegister(4);
-
-    if (fId > fileSystem->idFile) {
-        printf("\nInvalid file ID! Closing file failed!\n");
+    /*load fid from user to kernel*/
+    int fid = machine->ReadRegister(4);
+    /*fid: console input & output*/
+    if (fid == ConsoleInput || fid == ConsoleOutput) {
         machine->WriteRegister(2, -1);
         return;
     }
-
-    if (fileSystem->openFile[fId] == NULL) {
-        printf("\nInvalid ID or file has been closed!\n");
-        machine->WriteRegister(2, -1);
-        return;
-    }
-
-    delete fileSystem->openFile[fId];
-    fileSystem->openFile[fId] = NULL;
-    machine->WriteRegister(2, 0);
-    printf("\nClose file successful!\n");
+    /*fid: not console input & output*/
+    fid -= 2;
+    int ret = gFTable->Close(fid);
+    machine->WriteRegister(2, ret);
 }
 
 void ReadFileHandler() {
-    int virtualAddress = machine->ReadRegister(4);
-    int charCount = machine->ReadRegister(5);
-    int fId = machine->ReadRegister(6);
-
-    int strLen = 0;
-
-    if (fId > fileSystem->idFile || fId < 0) {
-        printf("\nInvalid file ID!\n");
+      int buffer = machine->ReadRegister(4);
+    int charcount = machine->ReadRegister(5);
+    int fid = machine->ReadRegister(6);
+    if (charcount < 0) {
         machine->WriteRegister(2, -1);
         return;
     }
-
-    if (fId == 1) {
-        printf("\nOut Console error!\n");
+    int i = 0;
+    if (fid == ConsoleInput) {
+        /*read from console input*/            
+        while (i < charcount) {
+            char oneChar = 0;
+            int ret = gSynchConsole->Read(&oneChar,1);
+            if (ret == -1) {
+                machine->WriteRegister(2, -2);
+                return;
+            } else if (ret == 0) break; 
+            machine->WriteMem(buffer + i, 1, (int)oneChar);
+            ++i;
+        }
+        machine->WriteRegister(2, i);
+        return;      
+    }
+    /*read from file*/
+    fid -= 2;
+    if (gFTable->getType(fid) == -1) {
         machine->WriteRegister(2, -1);
         return;
     }
+    while (i < charcount) {
+        char oneChar = 0;
+        if (gFTable->ReadChar(oneChar, fid) == 0) break;
+        machine->WriteMem(buffer + i, 1, (int)oneChar);
+        ++i;
+    }
+    machine->WriteRegister(2, i);
+}
 
-    if (fileSystem->openFile[fId] == NULL) {
-        printf("\nFile undefined error!\n");
+
+void WriteFileHandler() {
+    int buffer = machine->ReadRegister(4);
+    int charcount = machine->ReadRegister(5);
+    int fid = machine->ReadRegister(6);
+
+    if (charcount < 0) {
         machine->WriteRegister(2, -1);
         return;
     }
-
-    char *buffer = User2System(virtualAddress, charCount);
-    while (buffer[strLen] != '\0' && buffer[strLen] != '\n') {
-        strLen++;
+    
+    int i = 0;
+    if (fid == ConsoleOutput) {            
+        /*write to console output*/
+        while (i < charcount) {
+            int oneChar = 0;
+            bool ret = machine->ReadMem(buffer + i, 1, &oneChar); 
+            if (!ret) {
+                machine->WriteRegister(2, -1);
+                return;
+            }
+            char c = (char)oneChar;
+            gSynchConsole->Write(&c,1);
+            ++i;
+        }
+        machine->WriteRegister(2, i);
+        return;      
     }
-    buffer[strLen] = '\n';
 
-    // reading from console
-    if (fId == 0) {
-        int len = gSynchConsole->Read(buffer, charCount);
-        System2User(virtualAddress, len, buffer);
-        machine->WriteRegister(2, len - 1);
-
-        delete[] buffer;
+    /*write to file*/
+    fid -= 2;
+    if (gFTable->getType(fid) != 0) {
+        machine->WriteRegister(2, -1);
         return;
     }
-
-    // reading from file
-    fileSystem->openFile[fId]->Seek(0);
-    // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    if ((fileSystem->openFile[fId]->Read(buffer, strLen)) > 0) {
-        // int currentPosition = fileSystem -> openFile[fId] ->
-        // GetCursorPosition();
-        System2User(virtualAddress, strLen, buffer);
-        machine->WriteRegister(2, strLen);
-    } else {
-        machine->WriteRegister(2, -1);
+    while (i < charcount) {
+        int oneChar = 0;
+        bool ret = machine->ReadMem(buffer + i, 1, &oneChar); 
+        if (!ret) {
+            machine->WriteRegister(2, -1);
+            return;
+        }
+        char c = (char)oneChar;
+        gFTable->WriteChar(c, fid);
+        ++i;
     }
-
-    delete[] buffer;
+    machine->WriteRegister(2, i);
 }
 
 void ExecHandler() {
-    int virtAddr = machine->ReadRegister(4);  
-    char *name = User2System(virtAddr, 255);  
-
-    if (name == NULL) {
-        DEBUG('a', "\nCan not execute program with null name");
-        printf("\nCan not execute program with null name");
+    int name = machine->ReadRegister(4);
+    if (name == 0) {
         machine->WriteRegister(2, -1);
         return;
     }
-
-    if (fileSystem->Open(name) == NULL) {
-        DEBUG('a', "\nSC_Exec: Can't open this file.");
-        printf("\nSC_Exec: Can't open this file.");
-        machine->WriteRegister(2, -1);
-        return;
+    /*load file name from user to kernel*/
+    char s[FileNameMaxLen+1] = {0};
+    for (int j = 0; j < FileNameMaxLen; ++j) {
+        int oneChar = 0;
+        if (machine->ReadMem(name+j, 1, &oneChar) == FALSE) {
+            machine->WriteRegister(2, -1);
+            return;
+        }
+        if (oneChar == 0) break;
+        s[j] = (char)oneChar;
     }
-
-    int id = pTab->ExecUpdate(name);
-    machine->WriteRegister(2, id);
-
-    delete[] name;
-    return;
+    /*execute process*/
+    int ret = pTab->ExecUpdate(s);
+    machine->WriteRegister(2, ret);
 }
 
 void JoinHandler() {
@@ -391,78 +392,143 @@ void JoinHandler() {
     return;
 }
 
-void ExitHandler() {}
+void ExitHandler() {
+    int exitStatus = machine->ReadRegister(4);
 
-void CreateSemaphoreHandler() {}
+    if (exitStatus != 0) {
+        return;
+    }
 
-void WaitHandler() {}
+    int result = pTab->ExitUpdate(exitStatus);
 
-void SignalHandler() {}
+    currentThread->FreeSpace();
+    currentThread->Finish();
 
-void WriteFileHandler() {
-    int virtualAddress = machine->ReadRegister(4);
-    int charCount = machine->ReadRegister(5);
-    int fId = machine->ReadRegister(6);
+    machine->WriteRegister(2, result);
+    return;
+}
 
-    int strLen = 0;
-    int idx = 0;
+void CreateSemaphoreHandler() {
+    int virtAddr = machine->ReadRegister(4); //Đọc địa chỉ “name” từ thanh ghi r4.
+    int semval = machine->ReadRegister(5); //Đọc giá trị “semval” từ thanh ghi r5.
 
-    if (fId > fileSystem->idFile || fId < 0) {
-        printf("\nInvalid file ID!\n");
+    char *name = User2System(virtAddr, MAX_SIZE);
+
+    if (name == NULL) {
+        DEBUG('a', "\nCan not create semaphore with null name");
+        printf("\nCan not create semaphore with null name");
         machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fId == 0) {
-        printf("\nIn Console error!\n");
+    int res = semTab->Create(name, semval);
+
+    if (res == -1) {
+        DEBUG('a', "\nCan not create semaphore (%s, %d)", name, &semval);
+        printf("\nCan not create semaphore (%s, %d)", name, &semval);
+        machine->WriteRegister(2, -1);
+        delete[] name;
+        return;
+    }
+
+    machine->WriteRegister(2, res);
+    delete[] name;
+    return;
+}
+
+void WaitHandler() {
+    int virtAddr = machine->ReadRegister(4);
+
+    char *name = User2System(virtAddr, MAX_SIZE);
+
+    if (name == NULL) {
+        DEBUG('a', "\n Not enough memory in System");
+        printf("\n Not enough memory in System");
+        machine->WriteRegister(2, -1);
+
+        delete[] name;
+        return;
+    }
+
+    int res = semTab->Wait(name);
+
+    if (res == -1) {
+        DEBUG('a', "\n This semaphore name not exits");
+        printf("\n This semaphore name not exits!");
+        machine->WriteRegister(2, -1);
+
+        delete[] name;
+        return;
+    }
+
+    delete[] name;
+    machine->WriteRegister(2, res);
+    return;
+}
+
+void SignalHandler() {
+    int virtAddr = machine->ReadRegister(4);
+
+    char *name = User2System(virtAddr, MAX_SIZE);
+
+    if (name == NULL) {
+        DEBUG('a', "\n Not enough memory in System");
+        printf("\n Not enough memory in System");
+        machine->WriteRegister(2, -1);
+
+        delete[] name;
+        return;
+    }
+
+    int res = semTab->Signal(name);
+
+    if (res == -1) {
+        DEBUG('a', "\n This semaphore name not exits!");
+        printf("\n This semaphore name not exits!");
+        machine->WriteRegister(2, -1);
+
+        delete[] name;
+        return;
+    }
+
+    delete[] name;
+    machine->WriteRegister(2, res);
+    return;
+}
+
+void GetPIDHandler() { machine->WriteRegister(2, currentThread->processID); }
+
+
+void SeekHandler() {
+    int pos = machine->ReadRegister(4);
+    int id = machine->ReadRegister(5);
+
+    if (id < 0 || id > 9) {
+        printf("\nCan not seek.");
         machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem->openFile[fId] == NULL) {
-        printf("\nFile undefined error!\n");
+    if (fileSystem->openFile[id] == NULL) {
+        printf("\nCan not seek because this file does not exits.");
         machine->WriteRegister(2, -1);
         return;
     }
 
-    if (fileSystem->openFile[fId]->status == 1) {
-        printf("\nCan not modify read-only file!\n");
+    if (id == 0 || id == 1) {
+        printf("\nCan not seek in console.");
         machine->WriteRegister(2, -1);
         return;
     }
-
-    char *buffer = User2System(virtualAddress, charCount);
-    while (buffer[strLen] != '\0' && buffer[strLen] != '\n') {
-        strLen++;
-    }
-    buffer[strLen] = '\n';
-
-    // writing to console
-    if (fId == 1) {
-        while (buffer[idx] != '\0' && buffer[idx] != '\n') {
-            gSynchConsole->Write(buffer + idx, 1);
-            idx++;
-        }
-        // buffer[idx] = '\n';
-        gSynchConsole->Write(buffer + idx, 1);
-
-        machine->WriteRegister(2, idx - 1);
-        delete[] buffer;
-        return;
-    }
-
-    // writing into file
-    // int prevPosition = fileSystem -> openFile[fId] -> GetCursorPosition();
-    if ((fileSystem->openFile[fId]->Write(buffer, strLen)) > 0) {
-        // int currentPosition = fileSystem -> openFile[fId] ->
-        // GetCursorPosition();
-        System2User(virtualAddress, strLen, buffer);
-        machine->WriteRegister(2, strLen);
+    pos = (pos == -1) ? fileSystem->openFile[id]->Length() : pos;
+    if (pos > fileSystem->openFile[id]->Length() || pos < 0) {
+        printf("\nCan not seek to this position.");
+        machine->WriteRegister(2, -1);
     } else {
-        machine->WriteRegister(2, -1);
+        fileSystem->openFile[id]->Seek(pos);
+        machine->WriteRegister(2, pos);
     }
-
-    delete[] buffer;
+    return;
 }
 
 // Exception handler
@@ -542,8 +608,16 @@ void ExceptionHandler(ExceptionType which) {
                     WaitHandler();
                     break;
                 
-                case SC_Singal:
+                case SC_Signal:
                     SignalHandler();
+                    break;
+
+                case SC_Seek:
+                    SeekHandler();
+                    break;
+
+                case SC_GetPid:
+                    GetPIDHandler();
                     break;
             }
 

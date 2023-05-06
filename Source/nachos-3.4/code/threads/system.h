@@ -39,6 +39,11 @@ extern Timer *timer;                 // the hardware alarm clock
 extern Machine *machine;             // user program memory and registers
 extern SynchConsole *gSynchConsole;  // Bo sung them bien gSynchConsole
 
+/*include ftable.h*/
+#include "ftable.h"
+/*declare gFTable*/
+extern FTable* gFTable;
+
 extern Semaphore *addrLock;      // semaphore in synch.h
 extern BitMap *gPhysPageBitMap;  // manage physical frame in rame
 extern PTable *pTab;             // manage process

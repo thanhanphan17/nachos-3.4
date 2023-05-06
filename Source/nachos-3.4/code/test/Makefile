@@ -35,7 +35,8 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort rwfile createfile rwconsole process_a process_b test_exec_join
+all: halt shell matmult sort rwint rwchar rwstring help ascii bbsort rwfile createfile\
+	 rwconsole process_a process_b test_exec_join main sinhvien voinuoc
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -149,3 +150,24 @@ test_exec_join.o: test_exec_join.c
 test_exec_join: test_exec_join.o start.o
 	$(LD) $(LDFLAGS) start.o test_exec_join.o -o test_exec_join.coff
 	../bin/coff2noff test_exec_join.coff test_exec_join
+
+# Add main to compile 
+main.o: main.c
+	$(CC) $(CFLAGS) -c main.c
+main: main.o start.o
+	$(LD) $(LDFLAGS) start.o main.o -o main.coff
+	../bin/coff2noff main.coff main
+
+# Add sinhvien to compile 
+sinhvien.o: sinhvien.c
+	$(CC) $(CFLAGS) -c sinhvien.c
+sinhvien: sinhvien.o start.o
+	$(LD) $(LDFLAGS) start.o sinhvien.o -o sinhvien.coff
+	../bin/coff2noff sinhvien.coff sinhvien
+
+# Add voinuoc to compile 
+voinuoc.o: voinuoc.c
+	$(CC) $(CFLAGS) -c voinuoc.c
+voinuoc: voinuoc.o start.o
+	$(LD) $(LDFLAGS) start.o voinuoc.o -o voinuoc.coff
+	../bin/coff2noff voinuoc.coff voinuoc

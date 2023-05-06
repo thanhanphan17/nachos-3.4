@@ -47,10 +47,13 @@
 
 #define SC_CreateSemaphore 22
 #define SC_Wait 23
-#define SC_Singal 24
+#define SC_Signal 24
+#define SC_Seek 25
+#define SC_GetPid 26
 
 #define INT_LEN 11
 #define FILE_NAME_LEN 255
+#define MAX_SIZE 32
 
 #ifndef IN_ASM
 
@@ -82,15 +85,15 @@ void ReadString(char buffer[], int length); // Read string from console
 
 void PrintString(char buffer[]); // Print string to console
 
-int CreateFile(char *name); // Create new file
+int Create_File(char *name); // Create new file
 
-OpenFileId OpenFile(char* name, int type); // Open an existing file and return file's id
+OpenFileId Open_File(char* name, int type); // Open an existing file and return file's id
 
-int CloseFile(OpenFileId id); // Close file with given id
+int Close_File(OpenFileId id); // Close file with given id
 
-int ReadFile(char *buffer, int charcount, OpenFileId id); // Read file
+int Read_File(char *buffer, int charcount, OpenFileId id); // Read file
 
-int WriteFile(char *buffer, int charcount, OpenFileId id); // Write file
+int Write_File(char *buffer, int charcount, OpenFileId id); // Write file
 
 /* Address space control operations: Exit, Exec, and Join */
 
@@ -115,6 +118,8 @@ int CreateSemaphore(char* name, int semval);
 int Wait(char* name);
 
 int Signal(char* name);
+
+int Seek(int pos, OpenFileId id);
 
 /* File system operations: Create, Open, Read, Write, Close
  * These functions are patterned after UNIX -- files represent

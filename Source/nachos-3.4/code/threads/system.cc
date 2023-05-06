@@ -37,6 +37,9 @@ BitMap *gPhysPageBitMap;  // manage physical frame in rame
 PTable *pTab;             // manage process table
 STable *semTab;           // manage semaphore
 
+/*define gFTable*/
+FTable *gFTable;
+
 #endif
 
 #ifdef NETWORK
@@ -154,6 +157,9 @@ void Initialize(int argc, char **argv) {
     gPhysPageBitMap = new BitMap(256);
     pTab = new PTable(10);
     semTab = new STable();
+
+    /*construction - gFTable*/
+    gFTable = new FTable();
 #endif
 
 #ifdef FILESYS
@@ -182,6 +188,9 @@ void Cleanup() {
 #ifdef USER_PROGRAM
     delete machine;
     delete gSynchConsole;
+
+    /*destruction - gFTable*/
+    delete gFTable;
 #endif
 
 #ifdef FILESYS_NEEDED

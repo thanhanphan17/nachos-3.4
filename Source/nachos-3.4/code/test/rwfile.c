@@ -19,24 +19,28 @@ int main() {
     ReadString(fileName, 20);
 
     // open created file
-    fileID = OpenFile(fileName, READ_WRITE);
+    fileID = Open_File(fileName, READ_WRITE);
     if (fileID == -1) {
         Halt();
     }
 
     // input file content
-    PrintString("\n----Enter content to write into file: ");
+    PrintString("\n----Enter content to write: ");
     ReadString(inputContent, CONTENT_LEN);
 
+    while (inputContent[charCount] != '\0') {
+        charCount++;
+    }
+
     // reading and writing with created file
-    charCount = WriteFile(inputContent, CONTENT_LEN, fileID);
+    Write_File(inputContent, charCount, fileID);
 
     if (charCount == -1) {
         Halt();
     }
 
     PrintString("\n----Content in file: ");
-    ReadFile(outputContent, CONTENT_LEN, fileID);
+    Read_File(outputContent, charCount, fileID);
     PrintString(outputContent);
     PrintString("\n");
 
@@ -45,7 +49,7 @@ int main() {
     PrintString("\n");
 
     // close file
-    charCount = CloseFile(fileID);
+    Close_File(fileID);
 
     Halt();
 }

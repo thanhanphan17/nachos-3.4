@@ -162,45 +162,45 @@ PrintString:
 	j $31
 	.end PrintString
 
-	.globl CreateFile
-	.ent CreateFile
-CreateFile:
+	.globl Create_File
+	.ent Create_File
+Create_File:
 	addiu $2, $0, SC_CreateFile
 	syscall
 	j $31
-	.end CreateFile
+	.end Create_File
 
-	.globl OpenFile
-	.ent OpenFile
-OpenFile:
+	.globl Open_File
+	.ent Open_File
+Open_File:
 	addiu $2, $0, SC_OpenFile
 	syscall
 	j $31
-	.end OpenFile
+	.end Open_File
 
-	.globl CloseFile
-	.ent CloseFile
-CloseFile:
+	.globl Close_File
+	.ent Close_File
+Close_File:
 	addiu $2, $0, SC_CloseFile
 	syscall
 	j $31
-	.end CloseFile
+	.end Close_File
 
-	.globl ReadFile
-	.ent ReadFile
-ReadFile:
+	.globl Read_File
+	.ent Read_File
+Read_File:
 	addiu $2, $0, SC_ReadFile
 	syscall
 	j $31
-	.end ReadFile
+	.end Read_File
 
-	.globl WriteFile
-	.ent WriteFile
-WriteFile:
+	.globl Write_File
+	.ent Write_File
+Write_File:
 	addiu $2, $0, SC_WriteFile
 	syscall
 	j $31
-	.end WriteFile
+	.end Write_File
 
 	.globl Exec
 	.ent Exec
@@ -217,6 +217,46 @@ Join:
 	syscall
 	j $31
 	.end Join
+
+	.globl Wait
+	.ent Wait
+Wait:
+	addiu $2, $0, SC_Wait
+	syscall
+	j $31
+	.end Wait
+
+	.globl Signal
+	.ent Signal
+Signal:
+	addiu $2, $0, SC_Signal
+	syscall
+	j $31
+	.end Signal
+
+	.globl Seek
+	.ent Seek
+Seek:
+	addiu $2, $0, SC_Seek
+	syscall
+	j $31
+	.end Seek
+
+	.globl GetPid
+	.ent	GetPid
+GetPid:
+	addiu $2,$0,SC_GetPid
+	syscall
+	j	$31
+	.end GetPid
+
+	.globl CreateSemaphore
+	.ent CreateSemaphore
+CreateSemaphore:
+	addiu $2, $0, SC_CreateSemaphore
+	syscall
+	j $31
+	.end CreateSemaphore
 	
 /* dummy function to keep gcc happy */
         .globl  __main
